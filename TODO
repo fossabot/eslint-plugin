@@ -1,0 +1,23 @@
+When you run test, following error occurs:
+
+Failed to load plugin '@typescript-eslint' declared in 'BaseConfig#overrides[3]': Cannot find module 'eslint/use-at-your-own-risk' from 'node_modules/@typescript-eslint/eslint-plugin/dist/util/getESLintCoreRule.js'
+
+    Require stack:
+      node_modules/@typescript-eslint/eslint-plugin/dist/rules/brace-style.js
+      node_modules/@typescript-eslint/eslint-plugin/dist/rules/index.js
+      node_modules/@typescript-eslint/eslint-plugin/dist/index.js
+      node_modules/@eslint/eslintrc/dist/eslintrc.cjs
+      node_modules/eslint/lib/cli-engine/cli-engine.js
+      node_modules/eslint/lib/eslint/eslint.js
+      node_modules/eslint/lib/eslint/index.js
+      node_modules/eslint/lib/api.js
+      tests/configs.test.js
+
+    Referenced from: BaseConfig#overrides[3]
+
+      at Resolver.resolveModule (node_modules/jest-resolve/build/resolver.js:324:11)
+      at node_modules/@typescript-eslint/eslint-plugin/src/util/getESLintCoreRule.ts:47:11
+      at Object.<anonymous> (node_modules/@typescript-eslint/eslint-plugin/src/rules/brace-style.ts:10:35)
+
+Workaround here, but I will wait for Jest fix.
+https://github.com/typescript-eslint/typescript-eslint/issues/4210#issuecomment-981203332
