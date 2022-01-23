@@ -1,21 +1,46 @@
 "use strict";
 
-const { CLIEngine } = require("eslint");
+const { ESLint } = require("eslint");
 const { join } = require("path");
 
 const { mergeConfigs } = require("../src/helpers");
 const { configs } = require("../lib/config");
 const { sortObjects } = require("./testutils");
 
+const jsOpts = {
+  baseConfig: mergeConfigs(configs.plain, {
+    env: {
+      node: true,
+    },
+  }),
+  useEslintrc: false,
+};
+const tsOpts = {
+  baseConfig: mergeConfigs(configs.plain, {
+    env: {
+      node: true,
+    },
+    parserOptions: {
+      project: join(__dirname, "ts/tsconfig.json"),
+    },
+  }),
+  useEslintrc: false,
+};
+const jsmOpts = {
+  baseConfig: mergeConfigs(configs.plain, {
+    env: {
+      node: true,
+    },
+    parserOptions: {
+      sourceType: "module",
+    },
+  }),
+  useEslintrc: false,
+};
+
 test("js - valid", () => {
-  const results = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-    }),
-    useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "js/correct.js")).results;
+  const eslint = new ESLint(jsOpts);
+  const results = eslint.lintFiles(join(__dirname, "js/correct.js"));
 
   expect(results[0].messages).toHaveLength(0);
   expect(results).toHaveLength(1);
@@ -24,14 +49,8 @@ test("js - valid", () => {
 });
 
 test("js - invalid", () => {
-  const results = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-    }),
-    useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "js/incorrect.js")).results;
+  const eslint = new ESLint(jsOpts);
+  const results = eslint.lintFiles(join(__dirname, "js/incorrect.js"));
 
   expect(sortObjects(results[0].messages)).toEqual(sortObjects([
     {
@@ -245,14 +264,8 @@ test("js - invalid", () => {
 });
 
 test("js - invalid - no-undef", () => {
-  const results = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-    }),
-    useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "js/incorrect.no-undef.js")).results;
+  const eslint = new ESLint(jsOpts);
+  const results = eslint.lintFiles(join(__dirname, "js/incorrect.no-undef.js"));
 
   expect(results[0].messages).toEqual([
     {
@@ -285,17 +298,8 @@ test("js - invalid - no-undef", () => {
 });
 
 test("ts - valid", () => {
-  const results = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-      parserOptions: {
-        project: join(__dirname, "ts/tsconfig.json"),
-      },
-    }),
-    useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "ts/correct.ts")).results;
+  const eslint = new ESLint(tsOpts);
+  const results = eslint.lintFiles(join(__dirname, "ts/correct.ts"));
 
   expect(results[0].messages).toHaveLength(0);
   expect(results).toHaveLength(1);
@@ -304,17 +308,8 @@ test("ts - valid", () => {
 });
 
 test("ts - invalid", () => {
-  const results = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-      parserOptions: {
-        project: join(__dirname, "ts/tsconfig.json"),
-      },
-    }),
-    useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "./ts/incorrect.ts")).results;
+  const eslint = new ESLint(tsOpts);
+  const results = eslint.lintFiles(join(__dirname, "ts/incorrect.ts"));
 
   expect(results[0].messages).toEqual([
     {
@@ -411,19 +406,9 @@ test("ts - invalid", () => {
 });
 
 test("modules - js - valid", () => {
-  const engine = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-      parserOptions: {
-        sourceType: "module", // You need to explicitly set sourceType: "module" in JS code
-      },
-    }),
-    useEslintrc: false,
-  });
-  const results1 = engine.executeOnFiles(join(__dirname, "js/correct.modules-1.js")).results;
-  const results2 = engine.executeOnFiles(join(__dirname, "js/correct.modules-2.js")).results;
+  const eslint = new ESLint(jsmOpts);
+  const results1 = eslint.lintFiles(join(__dirname, "js/correct.modules-1.js"));
+  const results2 = eslint.lintFiles(join(__dirname, "js/correct.modules-2.js"));
 
   for (const results of [ results1, results2 ]) {
     expect(results[0].messages).toHaveLength(0);
@@ -434,19 +419,9 @@ test("modules - js - valid", () => {
 });
 
 test("modules - js - invalid", () => {
-  const engine = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-      parserOptions: {
-        sourceType: "module", // You need to explicitly set sourceType: "module" in JS code
-      },
-    }),
-    useEslintrc: false,
-  });
-  const results1 = engine.executeOnFiles(join(__dirname, "js/incorrect.modules-1.js")).results;
-  const results2 = engine.executeOnFiles(join(__dirname, "js/incorrect.modules-2.js")).results;
+  const eslint = new ESLint(jsmOpts);
+  const results1 = eslint.lintFiles(join(__dirname, "js/incorrect.modules-1.js"));
+  const results2 = eslint.lintFiles(join(__dirname, "js/incorrect.modules-2.js"));
 
   for (const results of [ results1, results2 ]) {
     expect(results[0].messages).toEqual([{
@@ -471,19 +446,9 @@ test("modules - js - invalid", () => {
 });
 
 test("modules - ts - valid", () => {
-  const engine = new CLIEngine({
-    baseConfig: mergeConfigs(configs.plain, {
-      env: {
-        node: true,
-      },
-      parserOptions: {
-        project: join(__dirname, "ts/tsconfig.json"),
-      },
-    }),
-    useEslintrc: false,
-  });
-  const results1 = engine.executeOnFiles(join(__dirname, "ts/correct.modules-1.ts")).results;
-  const results2 = engine.executeOnFiles(join(__dirname, "ts/correct.modules-2.ts")).results;
+  const eslint = new ESLint(tsOpts);
+  const results1 = eslint.lintFiles(join(__dirname, "ts/correct.modules-1.ts"));
+  const results2 = eslint.lintFiles(join(__dirname, "ts/correct.modules-2.ts"));
 
   for (const results of [ results1, results2 ]) {
     expect(results[0].messages).toHaveLength(0);
@@ -494,16 +459,19 @@ test("modules - ts - valid", () => {
 });
 
 for (const lang of [ "js", "ts" ]) {
+  const config = mergeConfigs(configs.plain, configs.jest);
+  const jestOpts = {
+    baseConfig: mergeConfigs(config, lang === "ts" ? {
+      parserOptions: {
+        project: join(__dirname, "ts/tsconfig.json"),
+      },
+    } : {}),
+    useEslintrc: false,
+  };
+
   test(`jest - ${lang} - valid`, () => {
-    const config = mergeConfigs(configs.plain, configs.jest);
-    const results = new CLIEngine({
-      baseConfig: mergeConfigs(config, lang === "ts" ? {
-        parserOptions: {
-          project: join(__dirname, "ts/tsconfig.json"),
-        },
-      } : {}),
-      useEslintrc: false,
-    }).executeOnFiles(join(__dirname, `./${lang}/jest-correct.test.${lang}`)).results;
+    const eslint = new ESLint(jestOpts);
+    const results = eslint.lintFiles(join(__dirname, `./${lang}/jest-correct.test.${lang}`));
 
     expect(results[0].messages).toEqual([]);
     expect(results).toHaveLength(1);
@@ -512,15 +480,8 @@ for (const lang of [ "js", "ts" ]) {
   });
 
   test(`jest - ${lang} - invalid`, () => {
-    const config = mergeConfigs(configs.plain, configs.jest);
-    const results = new CLIEngine({
-      baseConfig: mergeConfigs(config, lang === "ts" ? {
-        parserOptions: {
-          project: join(__dirname, "ts/tsconfig.json"),
-        },
-      } : {}),
-      useEslintrc: false,
-    }).executeOnFiles(join(__dirname, `./${lang}/jest-incorrect.test.${lang}`)).results;
+    const eslint = new ESLint(jestOpts);
+    const results = eslint.lintFiles(join(__dirname, `./${lang}/jest-incorrect.test.${lang}`));
 
     expect(results[0].messages).toEqual([
       {
@@ -612,10 +573,11 @@ for (const lang of [ "js", "ts" ]) {
 }
 
 test("CommonJS needs 'use strict'", () => {
-  const results = new CLIEngine({
+  const eslint = new ESLint({
     baseConfig: configs.node,
     useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "./js/correct.use-strict.cjs")).results;
+  });
+  const results = eslint.lintFiles(join(__dirname, "./js/correct.use-strict.cjs"));
 
   expect(results[0].messages).toEqual([]);
   expect(results).toHaveLength(1);
@@ -624,10 +586,11 @@ test("CommonJS needs 'use strict'", () => {
 });
 
 test("JSM forbids 'use strict'", () => {
-  const results = new CLIEngine({
+  const eslint = new ESLint({
     baseConfig: configs.node,
     useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "./js/correct.use-strict.mjs")).results;
+  });
+  const results = eslint.lintFiles(join(__dirname, "./js/correct.use-strict.mjs"));
 
   expect(results[0].messages).toEqual([]);
   expect(results).toHaveLength(1);
@@ -636,10 +599,11 @@ test("JSM forbids 'use strict'", () => {
 });
 
 test("Error when no 'use strict' in CommonJS", () => {
-  const results = new CLIEngine({
+  const eslint = new ESLint({
     baseConfig: configs.node,
     useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "./js/incorrect.use-strict.cjs")).results;
+  });
+  const results = eslint.lintFiles(join(__dirname, "./js/incorrect.use-strict.cjs"));
 
   expect(results[0].messages).toEqual([
     {
@@ -660,10 +624,11 @@ test("Error when no 'use strict' in CommonJS", () => {
 });
 
 test("Error when 'use strict' in JSM", () => {
-  const results = new CLIEngine({
+  const eslint = new ESLint({
     baseConfig: configs.node,
     useEslintrc: false,
-  }).executeOnFiles(join(__dirname, "./js/incorrect.use-strict.mjs")).results;
+  });
+  const results = eslint.lintFiles(join(__dirname, "./js/incorrect.use-strict.mjs"));
 
   expect(results[0].messages).toEqual([
     {
